@@ -1,3 +1,0 @@
-/home/martin/workspace/image-quality-analysis/build-untitled-Desktop-Default/CMakeFiles/rebuild_cache.dir
-/home/martin/workspace/image-quality-analysis/build-untitled-Desktop-Default/CMakeFiles/untitled.dir
-/home/martin/workspace/image-quality-analysis/build-untitled-Desktop-Default/CMakeFiles/edit_cache.dir

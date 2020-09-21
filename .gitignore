@@ -1,0 +1,17 @@
+# Ignore user files
+*.user
+*.autosave
+
+# Ignore binaries
+cameraCalibrator
+height-scanner
+pos-scanner
+
+# Ignore files created by binaries
+garmentHeightBackground.xml
+garmentHeightBackground_debug.png
+RealSensePositionScanner.cbp
+resetlock
+startLock
+rl-best-parameter-log.csv
+rl-parameter-log.csv
