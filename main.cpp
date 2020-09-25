@@ -7,7 +7,7 @@
 #include <iostream>
 #include <string>
 
-int getBlurValue(cv::Mat input)
+int getBlurValueLaplacian(cv::Mat input)
 {
     //https://stackoverflow.com/questions/24080123/opencv-with-laplacian-formula-to-detect-image-is-blur-or-not-in-ios
     cv::Mat matImageGrey;
@@ -41,7 +41,7 @@ int main( int argc, char** argv )
         return -1;
     }
 
-    std::cout << "Blur: " << getBlurValue(image) << std::endl;
+    std::cout << "Blur: " << getBlurValueLaplacian(image) << std::endl;
 
     return 0;
 }
