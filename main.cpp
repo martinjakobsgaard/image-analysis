@@ -27,6 +27,50 @@ int getBlurValueLaplacian(cv::Mat input)
     return variance;
 }
 
+int getBlurValueVert(cv::Mat input)
+{
+    int blurVal = 0;
+
+    cv::Mat matImageGrey;
+    cv::cvtColor(input, matImageGrey, CV_BGR2GRAY);
+
+    for(int i = 1; i < matImageGrey.size().height-1; i++)
+    {
+        for(int j = 0; j < matImageGrey.size().width; j++)
+        {
+            int pixelAbove = matImageGrey.at<uchar>(i-1,j);
+            int pixel = matImageGrey.at<uchar>(i,j);
+            int pixelBelow = matImageGrey.at<uchar>(i+1,j);
+
+            blurVal += (pixelAbove*1) + (pixel*-2) + (pixelBelow*1);
+        }
+    }
+
+    return blurVal;
+}
+
+int getBlurValueHor(cv::Mat input)
+{
+    int blurVal = 0;
+
+    cv::Mat matImageGrey;
+    cv::cvtColor(input, matImageGrey, CV_BGR2GRAY);
+
+    for(int j = 1; j < matImageGrey.size().width-1; j++)
+    {
+        for(int i = 0; i < matImageGrey.size().height; i++)
+        {
+            int pixelLeft = matImageGrey.at<uchar>(i,j-1);
+            int pixel = matImageGrey.at<uchar>(i,j);
+            int pixelRight = matImageGrey.at<uchar>(i,j+1);
+
+            blurVal += (pixelLeft*1) + (pixel*-2) + (pixelRight*1);
+        }
+    }
+
+    return blurVal;
+}
+
 int main( int argc, char** argv )
 {
     std::string imageName;
@@ -41,7 +85,7 @@ int main( int argc, char** argv )
         return -1;
     }
 
-    std::cout << "Blur: " << getBlurValueLaplacian(image) << std::endl;
+    std::cout << "Blur vertical: " << getBlurValueVert(image) << " Blur Horizontal: " << getBlurValueHor(image) << std::endl;
 
     return 0;
 }
