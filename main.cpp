@@ -71,13 +71,22 @@ int getBlurValueHor(cv::Mat input)
     return blurVal;
 }
 
+void convertHistogramEqualizer(cv::Mat input)
+{
+    cv::cvtColor(input, input, cv::COLOR_BGR2GRAY );
+    cv::Mat dst;
+    cv::equalizeHist(input, dst);
+    cv::imshow( "Equalized Image", dst);
+    cv::waitKey();
+}
+
 int main( int argc, char** argv )
 {
     std::string imageName;
     if( argc > 1)
         imageName = argv[1];
 
-    cv::Mat image;
+     cv::Mat image;
     image = cv::imread(imageName, cv::IMREAD_COLOR );
     if( image.empty() )
     {
@@ -85,7 +94,8 @@ int main( int argc, char** argv )
         return -1;
     }
 
-    std::cout << "Blur vertical: " << getBlurValueVert(image) << " Blur Horizontal: " << getBlurValueHor(image) << std::endl;
+    //std::cout << "Blur vertical: " << getBlurValueVert(image) << " Blur Horizontal: " << getBlurValueHor(image) << std::endl;
+    convertHistogramEqualizer((image));
 
     return 0;
 }
