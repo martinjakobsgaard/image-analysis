@@ -73,10 +73,22 @@ int getBlurValueHor(cv::Mat input)
 
 void convertHistogramEqualizer(cv::Mat input)
 {
-    cv::cvtColor(input, input, cv::COLOR_BGR2GRAY );
-    cv::Mat dst;
-    cv::equalizeHist(input, dst);
-    cv::imshow( "Equalized Image", dst);
+    cv::Mat hist_equalized_image;
+    cv::cvtColor(input, hist_equalized_image, cv::COLOR_BGR2YCrCb);
+
+    //Split the image into 3 channels; Y, Cr and Cb channels respectively and store it in a std::vector
+    std::vector<cv::Mat> vec_channels;
+    cv::split(hist_equalized_image, vec_channels);
+
+    //Equalize the histogram of only the Y channel
+    cv::equalizeHist(vec_channels[0], vec_channels[0]);
+
+    //Merge 3 channels in the vector to form the color image in YCrCB color space.
+    cv::merge(vec_channels, hist_equalized_image);
+
+    //Convert the histogram equalized image from YCrCb to BGR color space again
+    cv::cvtColor(hist_equalized_image, hist_equalized_image, cv::COLOR_YCrCb2BGR);
+    cv::imshow("Equalized Image", hist_equalized_image);
     cv::waitKey();
 }
 
