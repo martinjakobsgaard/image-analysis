@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <string>
+#include <regex>
 
 int getBlurValueLaplacian(cv::Mat input)
 {
@@ -71,7 +72,7 @@ int getBlurValueHor(cv::Mat input)
     return blurVal;
 }
 
-void convertHistogramEqualizer(cv::Mat input)
+cv::Mat convertHistogramEqualizer(cv::Mat input)
 {
     cv::Mat hist_equalized_image;
     cv::cvtColor(input, hist_equalized_image, cv::COLOR_BGR2YCrCb);
@@ -88,26 +89,48 @@ void convertHistogramEqualizer(cv::Mat input)
 
     //Convert the histogram equalized image from YCrCb to BGR color space again
     cv::cvtColor(hist_equalized_image, hist_equalized_image, cv::COLOR_YCrCb2BGR);
-    cv::imshow("Equalized Image", hist_equalized_image);
-    cv::waitKey();
+
+    return hist_equalized_image;
 }
 
 int main( int argc, char** argv )
 {
     std::string imageName;
-    if( argc > 1)
-        imageName = argv[1];
-
-     cv::Mat image;
-    image = cv::imread(imageName, cv::IMREAD_COLOR );
-    if( image.empty() )
-    {
-        std::cout <<  "Could not open or find the image" << std::endl ;
+    if( argc <= 1)
         return -1;
-    }
 
-    //std::cout << "Blur vertical: " << getBlurValueVert(image) << " Blur Horizontal: " << getBlurValueHor(image) << std::endl;
-    convertHistogramEqualizer((image));
+    // file pointer
+    std::fstream fout;
+
+    // opens an existing csv file or creates a new file.
+    fout.open("data.csv", std::ios::out /*| std::ios::app*/);
+
+    std::array<std::string,5> delimiter = {"_i", "_s", "_z", "_e", ".jpg"};
+
+    fout << "index" << ',' << "sequence" << ',' << "robotz" << ',' << "exposure" << ',' << "blur" << '\n';
+
+    for(int i = 1; i < argc; i++)
+    {
+        imageName = argv[i];
+
+        cv::Mat image;
+        image = cv::imread(imageName, cv::IMREAD_COLOR );
+
+        if( image.empty() )
+        {
+            std::cout <<  "Could not open or find the image" << std::endl ;
+            return -1;
+        }
+
+        for(int i = 0; i < delimiter.size()-1; i++)
+        {
+            std::regex base_regex(delimiter[i] + "(.*)" + delimiter[i+1]);
+            std::smatch base_match;
+            std::regex_search(imageName, base_match, base_regex);
+            fout << base_match[1].str() << ',';
+        }
+        fout << getBlurValueLaplacian(convertHistogramEqualizer(image)) << '\n';
+    }
 
     return 0;
 }
