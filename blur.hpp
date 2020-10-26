@@ -1,3 +1,6 @@
+#ifndef BLUR_HPP
+#define BLUR_HPP
+
 #include <iostream>
 
 // Include OpenCV API
@@ -6,7 +9,11 @@
 
 #include <iostream>
 #include <string>
-#include <regex>
+
+#include "utility.hpp"
+
+//const std::string path = ":/images/";
+//const std::string dataset = "exposure_test_light";
 
 int getBlurValueLaplacian(cv::Mat input)
 {
@@ -93,25 +100,30 @@ cv::Mat convertHistogramEqualizer(cv::Mat input)
     return hist_equalized_image;
 }
 
-int main( int argc, char** argv )
+void exportBlurData(int image_count, char** image_name, std::string file_name = "data.csv")
 {
-    std::string imageName;
-    if( argc <= 1)
-        return -1;
+    // TESTING
+    /*
+    std::vector<std::string> filenames;
+    get_filenames(filenames, "./");
+    for(int i = 0; i<filenames.size(); i++)
+        std::cout << filenames[i] << std::endl;
+    */
+    std::cout << "Exporting blur data to \"" << file_name << "\"..." << std::endl;
 
     // file pointer
     std::fstream fout;
 
     // opens an existing csv file or creates a new file.
-    fout.open("data.csv", std::ios::out /*| std::ios::app*/);
+    fout.open(file_name, std::ios::out);
 
     std::array<std::string,5> delimiter = {"_i", "_s", "_z", "_e", ".jpg"};
 
     fout << "index" << ',' << "sequence" << ',' << "robotz" << ',' << "exposure" << ',' << "blur" << '\n';
 
-    for(int i = 1; i < argc; i++)
+    for(int i = 1; i < image_count; i++)
     {
-        imageName = argv[i];
+        std::string imageName = image_name[i];
 
         cv::Mat image;
         image = cv::imread(imageName, cv::IMREAD_COLOR );
@@ -119,18 +131,23 @@ int main( int argc, char** argv )
         if( image.empty() )
         {
             std::cout <<  "Could not open or find the image" << std::endl ;
-            return -1;
+            return;
         }
 
-        for(int i = 0; i < delimiter.size()-1; i++)
+        for(int j = 0; j < delimiter.size()-1; j++)
         {
-            std::regex base_regex(delimiter[i] + "(.*)" + delimiter[i+1]);
+            std::regex base_regex(delimiter[j] + "(.*)" + delimiter[j+1]);
             std::smatch base_match;
             std::regex_search(imageName, base_match, base_regex);
             fout << base_match[1].str() << ',';
         }
         fout << getBlurValueLaplacian(convertHistogramEqualizer(image)) << '\n';
-    }
 
-    return 0;
+        // Progress
+        std::cout << "\rProgress: " << (i+1) << "/" << image_count << std::flush;
+    }
+    std::cout << std::endl;
+    std::cout << "Done!" << std::endl;
 }
+
+#endif // BLUR_HPP
