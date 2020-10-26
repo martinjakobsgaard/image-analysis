@@ -2,6 +2,8 @@
 *.user
 *.autosave
 build
+images/*
+
 # Ignore binaries
 cameraCalibrator
 height-scanner
