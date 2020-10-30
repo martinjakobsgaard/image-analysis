@@ -5,8 +5,9 @@
 #include <experimental/filesystem>
 
 // Test method includes
-#include "blur.hpp"
-#include "segmentation.hpp"
+//#include "blur.hpp"
+//#include "segmentation.hpp"
+#include "BlurTest.hpp"
 
 int main( int argc, char** argv )
 {
@@ -36,8 +37,10 @@ int main( int argc, char** argv )
     std::cout << "Found " << image_paths.size() << " image(s)!" << std::endl;
     
     // Do something with files
-    Blur my_test(image_paths);
-    my_test.exportBlurData("test_data.csv");
-
+    //Blur my_test(image_paths);
+    //my_test.exportBlurData("test_data.csv");
+    BlurTest my_test(image_paths);
+    my_test.perform_test();
+    my_test.export_results("blur_test_data_1.csv");
     return 0;
 }
