@@ -48,7 +48,7 @@ class BlurTest : public BaseTest
             std::cout << std::endl;
             std::cout << "Done!" << std::endl;
         }
-    
+        
     private:
         int getBlurValueLaplacian(cv::Mat input)
         {

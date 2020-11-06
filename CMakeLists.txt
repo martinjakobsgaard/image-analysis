@@ -4,5 +4,5 @@ project(image-analysis)
 find_package( OpenCV REQUIRED )
 set(DEPENDENCIES ${OpenCV_LIBS})
 
-add_executable(image-analysis "main.cpp" "BaseTest.hpp" "BlurTest.hpp")
+add_executable(image-analysis "main.cpp" "BaseTest.hpp" "BlurTest.hpp" "DynamicRangeTest.hpp")
 target_link_libraries(image-analysis stdc++fs ${DEPENDENCIES})
