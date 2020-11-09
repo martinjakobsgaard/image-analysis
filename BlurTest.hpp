@@ -12,10 +12,10 @@
 class BlurTest : public BaseTest
 {
     public:
-        BlurTest(std::vector<std::string> image_paths)
+        BlurTest(std::string path)
         {
             test_title = "blur_test";
-            test_image_paths = image_paths;
+            fetch_test_image_paths(path);
         }
         
         void perform_test() override
@@ -26,7 +26,7 @@ class BlurTest : public BaseTest
                 return;
             }
 
-            std::cout << "Performing blur test..." << std::endl;
+            std::cout << "Performing test \"" << test_title << "\"..." << std::endl;
             test_results.clear();
             
             

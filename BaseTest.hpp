@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 #include <regex>
+#include <experimental/filesystem>
 
 class BaseTest
 {
@@ -59,6 +60,30 @@ class BaseTest
                 std::regex_search(image_name, base_match, base_regex);
                 image_data.push_back(std::stoi(base_match[1].str()));
             }
+        }
+        
+        void fetch_test_image_paths(std::string path)
+        {
+            std::cout << "Scanning dataset path \"" << path << "\"..." << std::endl;
+            
+            // Generate vector of paths to supported files
+            test_image_paths.clear();
+            std::vector<std::string> supported_file_extensions = {"jpg", "png"};
+            for (const auto & entry : std::experimental::filesystem::directory_iterator(path))
+            {
+                std::string path_string = entry.path();
+                std::string file_extension = path_string.substr(path_string.find_last_of(".") + 1); 
+
+                for(const auto & supported_file_extension : supported_file_extensions)
+                {
+                    if(file_extension == supported_file_extension)
+                    {
+                        test_image_paths.push_back(path_string);
+                        break;
+                    }
+                }
+            }
+            std::cout << "Found " << test_image_paths.size() << " image(s)!" << std::endl;
         }
 
         std::vector<std::string> test_image_paths;

@@ -13,10 +13,10 @@
 class DynamicRangeTest : public BaseTest
 {
     public:
-        DynamicRangeTest(std::vector<std::string> image_paths)
+        DynamicRangeTest(std::string path)
         {
             test_title = "dynamic_range_test";
-            test_image_paths = image_paths;
+            fetch_test_image_paths(path);
         }
         
         void perform_test() override
@@ -27,7 +27,7 @@ class DynamicRangeTest : public BaseTest
                 return;
             }
 
-            std::cout << "Performing dynamic range test..." << std::endl;
+            std::cout << "Performing test \"" << test_title << "\"..." << std::endl;
             test_results.clear();
             
             
@@ -39,7 +39,7 @@ class DynamicRangeTest : public BaseTest
                     std::cout <<  "Could not open or find the image" << std::endl ;
                     return;
                 }
-
+                //std::cout << test_image_paths[i];
                 test_results.push_back(getDynamicRange(image));
 
                 // Progress
@@ -51,11 +51,11 @@ class DynamicRangeTest : public BaseTest
         }
         
     private:
-        double getDynamicRange(cv::Mat image_rgb)
+        double getDynamicRange(cv::Mat image_bgr)
         {
             // Convert image to hls
             cv::Mat image_hls;
-            cv::cvtColor(image_rgb, image_hls, cv::COLOR_RGB2HLS);
+            cv::cvtColor(image_bgr, image_hls, cv::COLOR_BGR2HLS);
 
             // Get min and max lightness
             int pixel_l_max = 0;
@@ -71,7 +71,7 @@ class DynamicRangeTest : public BaseTest
                         pixel_l_min = pixel_hls[1];
                 }
             }
-
+            //std::cout << "  min/max: " << pixel_l_min << '/' << pixel_l_max << std::endl; 
             // Return dynamic range
             return std::log2(pixel_l_max-pixel_l_min);
         }
