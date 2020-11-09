@@ -1,20 +1,20 @@
 %% Plot all data
 clc; clear; close;
 
-data = readtable("data.csv");
+data = readtable("blur_test_data_dark.csv");
 
 f = @(b,x) b(1).*exp(b(2).*x)+b(3);                                   
-B = fminsearch(@(b) norm(data.blur - f(b,data.exposure)), [-200; -1; 100]) 
+B = fminsearch(@(b) norm(data.result - f(b,data.exposure)), [-200; -1; 100]) 
 
 hold on
-scatter(data.exposure, data.blur)
+scatter(data.exposure, data.result)
 plot(data.exposure, f(B,data.exposure), '-r')
 hold off
 
 %% Sequence plotter
 clc; clear; close;
 
-data = readtable("data.csv");
+data = readtable("blur_test_data_dark.csv");
 
 size(data.exposure,1)
 
@@ -23,7 +23,7 @@ datasetExposure = [];
 
 for c = 1:size(data.exposure,1)
     if ((data.sequence(c)) == 1)
-        datasetBlur = [datasetBlur; data.blur(c)];
+        datasetBlur = [datasetBlur; data.result(c)];
         datasetExposure = [datasetExposure; data.exposure(c)];
     end
 end
@@ -35,7 +35,7 @@ ylim([0 6000])
 %% Average plot
 clc; clear; close;
 
-data = readtable("data.csv");
+data = readtable("blur_test_data_dark.csv");
 
 size(data.exposure,1)
 
@@ -48,13 +48,13 @@ exposureVal = [currentExposure];
 
 for c = 1:size(data.exposure,1)
     if ((data.exposure(c)) == currentExposure)
-        tempBuffer = [tempBuffer; data.blur(c)];
+        tempBuffer = [tempBuffer; data.result(c)];
     else 
         currentExposure = data.exposure(c);
         averageBlur = [averageBlur; mean(tempBuffer)];
         exposureVal = [exposureVal; currentExposure];
         tempBuffer = [];
-        tempBuffer = [tempBuffer; data.blur(c)];
+        tempBuffer = [tempBuffer; data.result(c)];
     end
 end
 
