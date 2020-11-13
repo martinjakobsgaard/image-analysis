@@ -8,7 +8,7 @@
 #include <cmath>
 
 // Base class
-#include "BaseTest.hpp"
+#include "basetest.hpp"
 
 class DynamicRangeTest : public BaseTest
 {

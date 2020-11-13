@@ -9,5 +9,5 @@ add_executable(image-analysis "image-analysis.cpp")
 target_link_libraries(image-analysis stdc++fs ${DEPENDENCIES})
 
 # Add pointcloud analysis binary
-add_executable(pointcloud-analysis "pointcloud-analysis.cpp" "segment.cpp")
+add_executable(pointcloud-analysis "pointcloud-analysis.cpp")
 target_link_libraries(pointcloud-analysis stdc++fs ${DEPENDENCIES})

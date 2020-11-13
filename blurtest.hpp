@@ -7,7 +7,7 @@
 #include <string>
 
 // Base class
-#include "BaseTest.hpp"
+#include "basetest.hpp"
 
 class BlurTest : public BaseTest
 {

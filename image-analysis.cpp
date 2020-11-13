@@ -4,8 +4,8 @@
 #include <string>
 
 // Test method includes
-#include "BlurTest.hpp"
-#include "DynamicRangeTest.hpp"
+#include "blurtest.hpp"
+#include "dynamicrangetest.hpp"
 
 int main( int argc, char** argv )
 {
