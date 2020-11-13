@@ -14,7 +14,5 @@ int main( int argc, char** argv )
 
     Segment SegmentationTest(path);
 
-    std::cout << path << "Hello darkness my old friend" << std::endl;
-
     return 0;
 }
