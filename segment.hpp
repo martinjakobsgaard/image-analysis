@@ -33,76 +33,125 @@ public:
         fetch_background(path);
     }
 
+    void clean_dataset()
+    {
+        std::ofstream ofs;
+        std::ifstream ifs("index.txt");
+        std::string line;
+        int index = 0;
+        if (ifs.is_open())
+        {
+            while ( getline (ifs,line) )
+                 index = std::stoi(line);
+            ifs.close();
+        }
+
+        int error_count = 0;
+        for(int i = index; i<test_image_paths.size(); i++)
+        {
+            // Pointcloud name
+            std::string image_path = test_image_paths[i];
+            std::string cloud_path = test_cloud_paths[i];
+
+            // Save paths to clean
+            ofs.open("file_pcd.txt",std::ofstream::trunc);
+            ofs << cloud_path;
+            ofs.close();
+            ofs.open("file_png.txt",std::ofstream::trunc);
+            ofs << image_path;
+            ofs.close();
+
+            std::cout << "Reading image: \"" << image_path << "\"" << std::endl;
+            cv::Mat test_image = cv::imread(image_path);
+
+            std::cout << "Reading cloud: \"" << cloud_path << "\"" << std::endl;
+            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+            if (pcl::io::loadPCDFile<pcl::PointXYZ> (cloud_path, *cloud) == -1) //* load the file
+            {
+                PCL_ERROR ("Couldn't read file.\n");
+                error_count++;
+                return; // Is grabbed by cleanup script
+            }
+
+            ofs.open("index.txt",std::ofstream::trunc);
+            ofs << i;
+            ofs.close();
+        }
+        std::cout << "I'm done!" << std::endl;
+        std::cout << "I failed " << error_count << " time(s)!" << std::endl;
+        std::cout << "(and a few more because i can't count weird segfaults!)" << std::endl;
+    }
+
     void perform_test()
     {
-        // Pointcloud name
-        std::string image_path = test_image_paths[690];
-        std::string cloud_path = test_cloud_paths[690];
-        cv::Mat test_image = cv::imread(image_path);
-
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-        if (pcl::io::loadPCDFile<pcl::PointXYZ> (cloud_path, *cloud) == -1) //* load the file
-        {
-            PCL_ERROR ("Couldn't read file test_pcd.pcd \n");
-            return;;
-        }
-
-        // Get background ptr
-        float* background_image_ptr = (float*)background_image.data;
-
-        cv::Mat mask_image(cv::Size(background_image.cols,background_image.rows), CV_8UC1, cv::Scalar(0));
-        uchar* mask_image_ptr = mask_image.data;
-
-        size_t index = 0;
-        for (const auto& point: *cloud)
-        {
-            //std::cout << "    " << point.x << " "    << point.y  << " "    << point.z << std::endl;
-
-
-            if ((point.z) != 0  && (background_image_ptr[index]-point.z) > 0.08)
-            {
-                mask_image_ptr[index] = 255;
-            }
-            index++;
-        }
-
-        cv::Mat segmented_image = test_image.clone();
-        int image_w_dif = mask_image.cols - test_image.cols;
-        int image_h_dif = mask_image.rows - test_image.rows;
-        int image_x_disp = -20;
-        int image_y_disp = 0;
-        std::array<int,2> padding = { (image_h_dif/2)-image_y_disp,   // Top
-                                      (image_w_dif/2)+image_x_disp }; // Left
-
-        for(size_t rows = 0; rows < segmented_image.rows; rows++)
-        {
-            for(size_t cols = 0; cols < segmented_image.cols; cols++)
-            {
-                int mask_value = mask_image.at<uchar>(cv::Point(cols+padding[1],rows+padding[0]));
-                if(mask_value == 0)
-                {
-                    cv::Vec3b & color = segmented_image.at<cv::Vec3b>(rows,cols);
-                    color[0] = 0;
-                    color[1] = 0;
-                    color[2] = 0;
-                }
-            }
-        }
-
-        std::cout << "help" << std::endl;
-
-        cv::namedWindow("Image");
-        cv::namedWindow("Mask");
+        //cv::namedWindow("Image");
+        //cv::namedWindow("Mask");
         cv::namedWindow("Segmented image");
 
-        std::cout << "Image: " << image_path << "\n(" << test_image.cols << "x" << test_image.rows << ")" << std::endl; // 640x360
-        std::cout << "Cloud: " << cloud_path << "\n(" << mask_image.cols << "x" << mask_image.rows << ")" << std::endl; // 848x480
+        for(int i = 0; i<test_image_paths.size(); i++)
+        {
+            // Pointcloud name
+            std::string image_path = test_image_paths[i];
+            std::string cloud_path = test_cloud_paths[i];
 
-        cv::imshow("Image", test_image);
-        cv::imshow("Mask", mask_image);
-        cv::imshow("Segmented image", segmented_image);
-        int k = cv::waitKey(0); // Wait for a keystroke in the window
+            std::cout << "Reading image: \"" << image_path << "\"" << std::endl;
+            cv::Mat test_image = cv::imread(image_path);
 
+            std::cout << "Reading cloud: \"" << cloud_path << "\"" << std::endl;
+            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+            if (pcl::io::loadPCDFile<pcl::PointXYZ> (cloud_path, *cloud) == -1) //* load the file
+            {
+                PCL_ERROR ("Couldn't read file.\n");
+                return;
+            }
+
+            // Get background ptr
+            float* background_image_ptr = (float*)background_image.data;
+
+            cv::Mat mask_image(cv::Size(background_image.cols,background_image.rows), CV_8UC1, cv::Scalar(0));
+            uchar* mask_image_ptr = mask_image.data;
+
+            size_t index = 0;
+            for (const auto& point: *cloud)
+            {
+                if ((point.z) != 0  && (background_image_ptr[index]-point.z) > 0.08)
+                {
+                    mask_image_ptr[index] = 255;
+                }
+                index++;
+            }
+
+            cv::Mat segmented_image = test_image.clone();
+            int image_w_dif = mask_image.cols - test_image.cols;
+            int image_h_dif = mask_image.rows - test_image.rows;
+            int image_x_disp = -20;
+            int image_y_disp = 0;
+            std::array<int,2> padding = { (image_h_dif/2)-image_y_disp,   // Top
+                                          (image_w_dif/2)+image_x_disp }; // Left
+
+            for(size_t rows = 0; rows < segmented_image.rows; rows++)
+            {
+                for(size_t cols = 0; cols < segmented_image.cols; cols++)
+                {
+                    int mask_value = mask_image.at<uchar>(cv::Point(cols+padding[1],rows+padding[0]));
+                    if(mask_value == 0)
+                    {
+                        cv::Vec3b & color = segmented_image.at<cv::Vec3b>(rows,cols);
+                        color[0] = 0;
+                        color[1] = 0;
+                        color[2] = 0;
+                    }
+                }
+            }
+
+            //std::cout << "Image: " << image_path << "\n(" << test_image.cols << "x" << test_image.rows << ")" << std::endl; // 640x360
+            //std::cout << "Cloud: " << cloud_path << "\n(" << mask_image.cols << "x" << mask_image.rows << ")" << std::endl; // 848x480
+
+            //cv::imshow("Image", test_image);
+            //cv::imshow("Mask", mask_image);
+            cv::imshow("Segmented image", segmented_image);
+            int k = cv::waitKey(0); // Wait for a keystroke in the window
+        }
         std::cout << "I'm done!" << std::endl;
     }
 
