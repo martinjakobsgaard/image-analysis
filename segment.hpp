@@ -38,6 +38,7 @@ public:
         // Pointcloud name
         std::string image_path = test_image_paths[690];
         std::string cloud_path = test_cloud_paths[690];
+        cv::Mat test_image = cv::imread(image_path);
 
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
         if (pcl::io::loadPCDFile<pcl::PointXYZ> (cloud_path, *cloud) == -1) //* load the file
@@ -65,20 +66,41 @@ public:
             index++;
         }
 
-        //cv::Mat debugBackGround;
-        //output_image_debug.convertTo(debugBackGround,CV_8UC1,255.0/1.2);
-        //cv::imwrite("debug_lolimage.png", debugBackGround);
+        cv::Mat segmented_image = test_image.clone();
+        int image_w_dif = mask_image.cols - test_image.cols;
+        int image_h_dif = mask_image.rows - test_image.rows;
+        int image_x_disp = -20;
+        int image_y_disp = 0;
+        std::array<int,2> padding = { (image_h_dif/2)-image_y_disp,   // Top
+                                      (image_w_dif/2)+image_x_disp }; // Left
+
+        for(size_t rows = 0; rows < segmented_image.rows; rows++)
+        {
+            for(size_t cols = 0; cols < segmented_image.cols; cols++)
+            {
+                int mask_value = mask_image.at<uchar>(cv::Point(cols+padding[1],rows+padding[0]));
+                if(mask_value == 0)
+                {
+                    cv::Vec3b & color = segmented_image.at<cv::Vec3b>(rows,cols);
+                    color[0] = 0;
+                    color[1] = 0;
+                    color[2] = 0;
+                }
+            }
+        }
+
+        std::cout << "help" << std::endl;
 
         cv::namedWindow("Image");
         cv::namedWindow("Mask");
+        cv::namedWindow("Segmented image");
 
-        cv::Mat img = cv::imread(image_path);
+        std::cout << "Image: " << image_path << "\n(" << test_image.cols << "x" << test_image.rows << ")" << std::endl; // 640x360
+        std::cout << "Cloud: " << cloud_path << "\n(" << mask_image.cols << "x" << mask_image.rows << ")" << std::endl; // 848x480
 
-        std::cout << "Image: " << image_path << std::endl;
-        std::cout << "Cloud: " << cloud_path << std::endl;
-
-        cv::imshow("Image", img);
+        cv::imshow("Image", test_image);
         cv::imshow("Mask", mask_image);
+        cv::imshow("Segmented image", segmented_image);
         int k = cv::waitKey(0); // Wait for a keystroke in the window
 
         std::cout << "I'm done!" << std::endl;
