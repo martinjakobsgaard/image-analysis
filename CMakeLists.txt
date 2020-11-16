@@ -1,8 +1,17 @@
 cmake_minimum_required(VERSION 3.1)
 project(data-analysis)
 
+# OpenCV
 find_package( OpenCV REQUIRED )
-set(DEPENDENCIES ${OpenCV_LIBS})
+
+# PCL
+find_package(PCL 1.2 REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
+# Set dependencies
+set(DEPENDENCIES ${OpenCV_LIBS} ${PCL_LIBRARIES})
 
 # Add image analysis binary
 add_executable(image-analysis "image-analysis.cpp")
