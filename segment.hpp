@@ -20,6 +20,10 @@
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 
+// Some specs
+#define HISTEQ true
+#define PROC_MASK true
+
 class Segment
 {
 public:
@@ -84,11 +88,9 @@ public:
 
     void perform_test()
     {
-        //cv::namedWindow("Image");
-        //cv::namedWindow("Mask");
         cv::namedWindow("Segmented image");
 
-        for(int i = 0; i<test_image_paths.size(); i++)
+        for(int i = 9; i<test_image_paths.size(); i++)
         {
             // Pointcloud name
             std::string image_path = test_image_paths[i];
@@ -108,20 +110,55 @@ public:
             // Get background ptr
             float* background_image_ptr = (float*)background_image.data;
 
+            // Generate segmentation mask
             cv::Mat mask_image(cv::Size(background_image.cols,background_image.rows), CV_8UC1, cv::Scalar(0));
             uchar* mask_image_ptr = mask_image.data;
-
             size_t index = 0;
             for (const auto& point: *cloud)
             {
-                if ((point.z) != 0  && (background_image_ptr[index]-point.z) > 0.08)
+                if ((point.z) != 0 && (point.z < 1.0) && (background_image_ptr[index]-point.z) > 0.15) // was 0.08
                 {
                     mask_image_ptr[index] = 255;
                 }
                 index++;
             }
 
-            cv::Mat segmented_image = test_image.clone();
+            // Erode/dilate mask
+            if(PROC_MASK)
+            {
+                // Create dilation element
+                int dilation_type = 0;
+                int dilation_size = 2;
+                cv::Mat dilation_element = cv::getStructuringElement( dilation_type,
+                                     cv::Size( 2*dilation_size + 1, 2*dilation_size+1 ),
+                                     cv::Point( dilation_size, dilation_size ) );
+
+                // Create erosion element
+                int erosion_type = 0;
+                int erosion_size = 2;
+                cv::Mat erosion_element = cv::getStructuringElement( erosion_type,
+                                     cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+                                     cv::Point( erosion_size, erosion_size ) );
+
+                // Process mask
+                cv::dilate( mask_image, mask_image, dilation_element );
+                cv::erode( mask_image, mask_image, erosion_element );
+            }
+
+            // Create test image (or equalized image)
+            cv::Mat segmented_image;
+            if(HISTEQ)
+            {
+                cv::Mat histeq_image = test_image.clone();
+                cv::cvtColor( histeq_image, histeq_image, cv::COLOR_BGR2GRAY );
+                cv::equalizeHist( histeq_image, segmented_image );
+            }
+            else
+            {
+                segmented_image = test_image.clone();
+            }
+
+            // Calculate mask alignment
             int image_w_dif = mask_image.cols - test_image.cols;
             int image_h_dif = mask_image.rows - test_image.rows;
             int image_x_disp = -20;
@@ -129,6 +166,7 @@ public:
             std::array<int,2> padding = { (image_h_dif/2)-image_y_disp,   // Top
                                           (image_w_dif/2)+image_x_disp }; // Left
 
+            // Apply mask to image
             for(size_t rows = 0; rows < segmented_image.rows; rows++)
             {
                 for(size_t cols = 0; cols < segmented_image.cols; cols++)
@@ -136,19 +174,22 @@ public:
                     int mask_value = mask_image.at<uchar>(cv::Point(cols+padding[1],rows+padding[0]));
                     if(mask_value == 0)
                     {
-                        cv::Vec3b & color = segmented_image.at<cv::Vec3b>(rows,cols);
-                        color[0] = 0;
-                        color[1] = 0;
-                        color[2] = 0;
+                        if(HISTEQ)
+                        {
+                            segmented_image.at<uchar>(rows,cols) = 0;
+                        }
+                        else
+                        {
+                            cv::Vec3b & color = segmented_image.at<cv::Vec3b>(rows,cols);
+                            color[0] = 0;
+                            color[1] = 0;
+                            color[2] = 0;
+                        }
                     }
                 }
             }
 
-            //std::cout << "Image: " << image_path << "\n(" << test_image.cols << "x" << test_image.rows << ")" << std::endl; // 640x360
-            //std::cout << "Cloud: " << cloud_path << "\n(" << mask_image.cols << "x" << mask_image.rows << ")" << std::endl; // 848x480
-
-            //cv::imshow("Image", test_image);
-            //cv::imshow("Mask", mask_image);
+            // Show image
             cv::imshow("Segmented image", segmented_image);
             int k = cv::waitKey(0); // Wait for a keystroke in the window
         }
