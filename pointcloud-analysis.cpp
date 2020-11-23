@@ -13,9 +13,7 @@ int main( int argc, char** argv )
         path = argv[1];
 
     Segment SegmentationTest(path);
-    //SegmentationTest.export_background();
     SegmentationTest.perform_test();
-    //SegmentationTest.clean_dataset();
 
     return 0;
 }
