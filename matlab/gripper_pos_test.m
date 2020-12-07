@@ -1,7 +1,7 @@
 close; clc; clear;
 
-data = readtable("data-tiny-gripper-pos.csv");
+data = readtable("blur_data_0.csv");
 
 hold on
-scatter(data.robot_z, data.image_z)
+scatter(data.exposure, data.result)
 hold off

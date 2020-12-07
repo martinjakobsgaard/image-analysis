@@ -1,7 +1,7 @@
 %% Plot all data
 clc; clear; close;
 
-data = readtable("blur_test_data_dark.csv");
+data = readtable("blur_test_data_light.csv");
 
 f = @(b,x) b(1).*exp(b(2).*x)+b(3);                                   
 B = fminsearch(@(b) norm(data.result - f(b,data.exposure)), [-200; -1; 100]) 
@@ -14,7 +14,7 @@ hold off
 %% Sequence plotter
 clc; clear; close;
 
-data = readtable("blur_test_data_dark.csv");
+data = readtable("blur_test_data_light.csv");
 
 size(data.exposure,1)
 
@@ -60,10 +60,15 @@ end
 
 averageBlur = [averageBlur; mean(tempBuffer)];
 
-f = @(b,x) b(1).*exp(b(2).*x)+b(3);                                   
-B = fminsearch(@(b) norm(averageBlur - f(b,exposureVal)), [-200; -1; 100]) 
+%options = optimset('MaxFunEvals',5000);
+
+%f = @(b,x) b(1).*exp(b(2).*x)+b(3);                                   
+%B = fminsearch(@(b) norm(averageBlur - f(b,exposureVal)), [-0; -1; 100]) 
 
 hold on
 scatter(exposureVal, averageBlur)
-plot(exposureVal, f(B,exposureVal), '-r')
+%plot(exposureVal, f(B,exposureVal), '-r')
+xlabel({'Exposure time [ms]'});
+ylabel({'Sharpness'});
+title('Dark garments')
 hold off
