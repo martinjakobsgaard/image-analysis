@@ -9,6 +9,8 @@
 // Base class
 #include "basetest.hpp"
 
+#define USE_MASK false
+
 class BlurTest : public BaseTest
 {
     public:
@@ -16,6 +18,7 @@ class BlurTest : public BaseTest
         {
             test_title = "blur_test";
             fetch_test_image_paths(path);
+            std::sort(test_image_paths.begin(), test_image_paths.end());
         }
         
         void perform_test() override
@@ -39,10 +42,56 @@ class BlurTest : public BaseTest
                     return;
                 }
 
-                test_results.push_back(getBlurValueLaplacian(image));
+                //int image_original_size = image.rows*image.cols;
+
+                if(USE_ROI)
+                {
+                    cv::Rect crop(448, 115, 400, 120);
+                    image = image(crop);
+                }
+
+                if(USE_MASK)
+                {
+                    // SPOOKY MASK SHIT
+                    cv::Mat1b mask_image(image.rows, image.cols, uchar(0));
+                    cv::Mat grey_image;
+                    cv::cvtColor(image, grey_image, CV_BGR2GRAY);
+                    for(int col = 0; col < image.cols; col++)
+                    {
+                        for(int row = 0; row < image.rows; row++)
+                        {
+                            int pixel = grey_image.at<uchar>(row,col);
+
+                            if(pixel != 0)
+                                mask_image.at<uchar>(row,col) = 255;
+                        }
+                    }
+                    cv::Rect box = findMinRect(~mask_image);
+                    //cv::Scalar rectColor(0, 255, 0);
+                    //cv::rectangle(image, box, rectColor, 2);
+                    //cv::imshow("heyho", image);
+                    //cv::imshow("heyho", mask_image);
+                    //cv::waitKey(0);
+
+                    //cv::Rect crop(448, 115, 400, 120);
+                    image = image(box);
+                    //cv::imshow("heyho", image);
+                    //cv::waitKey(0);
+                }
+
+                //int image_new_size = image.rows*image.cols;
+
+
+                float result = getBlurValueLaplacian(image);//*((image_original_size*1.0)/image_new_size);
+                test_results.push_back(result);
+
+                std::cout << test_image_paths[i] << " -> " << result << std::endl;
+
+                //cv::imshow("Dummy", image);
+                //cv::waitKey(0);
 
                 // Progress
-                std::cout << "\rProgress: " << (i+1) << "/" << test_image_paths.size() << std::flush;
+                //std::cout << "\rProgress: " << (i+1) << "/" << test_image_paths.size() << std::flush;
             }
             
             std::cout << std::endl;
@@ -50,11 +99,13 @@ class BlurTest : public BaseTest
         }
         
     private:
-        int getBlurValueLaplacian(cv::Mat input)
+        double getBlurValueLaplacian(cv::Mat input)
         {
             //https://stackoverflow.com/questions/24080123/opencv-with-laplacian-formula-to-detect-image-is-blur-or-not-in-ios
             cv::Mat matImageGrey;
             cv::cvtColor(input, matImageGrey, CV_BGR2GRAY);
+
+            //equalizeHist( matImageGrey, matImageGrey );
 
             cv::Mat laplacianImage;
             //cv::Laplacian(matImageGrey, laplacianImage, CV_8U);
@@ -134,4 +185,66 @@ class BlurTest : public BaseTest
 
             return hist_equalized_image;
         }
+
+        double occupance(cv::Mat input)
+        {
+            cv::cvtColor(input, input, CV_BGR2GRAY);
+
+            int occupied = 0;
+            for(int col = 0; col < input.cols; col++)
+            {
+                for(int row = 0; row < input.rows; row++)
+                {
+                    int pixel = input.at<uchar>(row,col);
+
+                    if(pixel != 0)
+                        occupied++;
+                }
+            }
+            return ((occupied*1.0)/(input.cols*input.rows));
+        }
+
+        cv::Rect findMinRect(const cv::Mat1b& src)
+        {
+            cv::Mat1f W(src.rows, src.cols, float(0));
+            cv::Mat1f H(src.rows, src.cols, float(0));
+
+            cv::Rect maxRect(0, 0, 0, 0);
+            float maxArea = 0.f;
+
+            for (int r = 0; r < src.rows; ++r)
+            {
+                for (int c = 0; c < src.cols; ++c)
+                {
+                    if (src(r, c) == 0)
+                    {
+                        H(r, c) = 1.f + ((r>0) ? H(r - 1, c) : 0);
+                        W(r, c) = 1.f + ((c>0) ? W(r, c - 1) : 0);
+                    }
+
+                    float minw = W(r, c);
+                    for (int h = 0; h < H(r, c); ++h)
+                    {
+                        minw = std::min(minw, W(r - h, c));
+                        float area = (h + 1) * minw;
+                        if (area > maxArea)
+                        {
+                            maxArea = area;
+                            maxRect = cv::Rect(cv::Point(c - minw + 1, r - h), cv::Point(c + 1, r + 1));
+                        }
+                    }
+                }
+            }
+
+            return maxRect;
+        }
+
+
+        struct lessVec3b
+        {
+            bool operator()(const cv::Vec3b& lhs, const cv::Vec3b& rhs)
+            {
+                return (lhs[0] != rhs[0]) ? (lhs[0] < rhs[0]) : ((lhs[1] != rhs[1]) ? (lhs[1] < rhs[1]) : (lhs[2] < rhs[2]));
+            }
+        };
 };

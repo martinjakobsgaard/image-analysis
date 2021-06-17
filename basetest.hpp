@@ -11,6 +11,8 @@
 #include <regex>
 #include <experimental/filesystem>
 
+#define USE_ROI true
+
 class BaseTest
 {
     public:
@@ -35,13 +37,13 @@ class BaseTest
             std::fstream fout;
             fout.open(file_name, std::ios::out);
 
-            fout << "index,sequence,robotz,exposure,result\n";
+            fout << "index,exposure,result\n";
 
             for(int i = 0; i < test_image_paths.size(); i++)
             {
                 std::string image_name = test_image_paths[i];
                 std::vector<int> image_data;
-                get_data(image_data,image_name);
+                get_data(image_data,image_name, {"_i", "_e", ".jpg"});
 
                 for(int j = 0; j < image_data.size(); j++)
                 {
@@ -51,13 +53,14 @@ class BaseTest
             }
         }
     protected:
-        void get_data(std::vector<int> &image_data, std::string image_name, std::vector<std::string> delimiters = {"_i", "_s", "_z", "_e", ".jpg"})
+        void get_data(std::vector<int> &image_data, std::string image_name, std::vector<std::string> delimiters = {"_s", "_i", "_z", "_e", ".png"})
         {
             for(int j = 0; j < delimiters.size()-1; j++)
             {
                 std::regex base_regex(delimiters[j] + "(.*)" + delimiters[j+1]);
                 std::smatch base_match;
                 std::regex_search(image_name, base_match, base_regex);
+                //std::cout << delimiters[j] << ": " << base_match[1].str() << std::endl;
                 image_data.push_back(std::stoi(base_match[1].str()));
             }
         }

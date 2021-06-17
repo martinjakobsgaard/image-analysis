@@ -23,7 +23,6 @@
 // Some specs
 #define HISTEQ true
 #define PROC_MASK true
-
 class Segment
 {
 public:
@@ -89,41 +88,50 @@ public:
     void perform_test()
     {
         cv::namedWindow("Segmented image");
+        mkdir("./export/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-        for(int i = 9; i<test_image_paths.size(); i++)
+        int export_count = 0;
+        for(int i = 11; i<test_image_paths.size(); i++)
         {
-            // Pointcloud name
+            // Get paths
             std::string image_path = test_image_paths[i];
             std::string cloud_path = test_cloud_paths[i];
 
-            std::cout << "Reading image: \"" << image_path << "\"" << std::endl;
+            // Read data (with fail safe!)
+            std::cout << "Reading data:" << std::endl;
+            std::cout << "> " << image_path.substr(image_path.find("export"), image_path.length()) << std::endl;
             cv::Mat test_image = cv::imread(image_path);
-
-            std::cout << "Reading cloud: \"" << cloud_path << "\"" << std::endl;
+            if( test_image.empty() )
+            {
+                std::cout <<  "> Could not open or find the image!" << std::endl ;
+                continue;
+            }
+            std::cout << "> " << cloud_path.substr(cloud_path.find("export"), cloud_path.length()) << std::endl;
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
             if (pcl::io::loadPCDFile<pcl::PointXYZ> (cloud_path, *cloud) == -1) //* load the file
             {
-                PCL_ERROR ("Couldn't read file.\n");
-                return;
+                std::cout <<  "> Could not open or find the point cloud!" << std::endl ;
+                continue;
             }
 
-            // Get background ptr
+            // Generate segmentation mask from background image
             float* background_image_ptr = (float*)background_image.data;
-
-            // Generate segmentation mask
             cv::Mat mask_image(cv::Size(background_image.cols,background_image.rows), CV_8UC1, cv::Scalar(0));
             uchar* mask_image_ptr = mask_image.data;
             size_t index = 0;
             for (const auto& point: *cloud)
             {
+                //std::cout << point.z << std::endl;
                 if ((point.z) != 0 && (point.z < 1.0) && (background_image_ptr[index]-point.z) > 0.15) // was 0.08
                 {
                     mask_image_ptr[index] = 255;
+                    //std::cout << background_image_ptr[index]-point.z << std::endl;
+                    //std::cout << "I found one!" << std::endl;
                 }
                 index++;
             }
 
-            // Erode/dilate mask
+            // Optional: Erode/dilate mask
             if(PROC_MASK)
             {
                 // Create dilation element
@@ -145,7 +153,29 @@ public:
                 cv::erode( mask_image, mask_image, erosion_element );
             }
 
-            // Create test image (or equalized image)
+            // Find largest mask contour (likely garment)
+            cv::Rect bounding_rect;
+            std::vector<std::vector<cv::Point>> contours;
+            std::vector<cv::Vec4i> hierarchy;
+            cv::findContours( mask_image, contours, hierarchy,CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE );
+
+            int largest_contour_area=0;
+            int largest_contour_index=0;
+            for( int i = 0; i < contours.size(); i++ )
+            {
+                double contour_area = cv::contourArea(contours[i],false);
+                if(contour_area > largest_contour_area)
+                {
+                    largest_contour_area = contour_area;
+                    largest_contour_index = i;
+                }
+            }
+
+            // Generate new mask from contour
+            cv::Mat mask_image_contour(cv::Size(background_image.cols,background_image.rows), CV_8UC1, cv::Scalar(0));
+            cv::drawContours( mask_image_contour, contours, largest_contour_index, cv::Scalar(255), CV_FILLED, 8, hierarchy, 0, cv::Point());
+
+            // Create test image. Optional: Equalize image
             cv::Mat segmented_image;
             if(HISTEQ)
             {
@@ -165,13 +195,16 @@ public:
             int image_y_disp = 0;
             std::array<int,2> padding = { (image_h_dif/2)-image_y_disp,   // Top
                                           (image_w_dif/2)+image_x_disp }; // Left
+            //padding[0];
+            //padding[1];
 
-            // Apply mask to image
+            // Apply contour mask to image
             for(size_t rows = 0; rows < segmented_image.rows; rows++)
             {
                 for(size_t cols = 0; cols < segmented_image.cols; cols++)
                 {
-                    int mask_value = mask_image.at<uchar>(cv::Point(cols+padding[1],rows+padding[0]));
+                    int mask_value = mask_image_contour.at<uchar>(cv::Point(cols+padding[1],rows+padding[0]));
+
                     if(mask_value == 0)
                     {
                         if(HISTEQ)
@@ -191,6 +224,14 @@ public:
 
             // Show image
             cv::imshow("Segmented image", segmented_image);
+            std::string export_name = "./export/" + image_path.substr(image_path.find("export"), image_path.length());
+            //std::cout << "Writing data:" << std::endl;
+            //std::cout << "> " << export_name << std::endl;
+            //std::string mask_name = "./export/mask"+std::to_string(export_count)+".jpg";
+            //std::string contour_name = "./export/mask"+std::to_string(export_count)+"_contour.jpg";
+            //imwrite(mask_name, mask_image);
+            //imwrite(contour_name, mask_image_contour);
+            export_count++;
             int k = cv::waitKey(0); // Wait for a keystroke in the window
         }
         std::cout << "I'm done!" << std::endl;
@@ -202,7 +243,6 @@ public:
         background_image.convertTo(debugBackGround,CV_8UC1,255.0/1.2);
         cv::imwrite("debug_image.png", debugBackGround);
     }
-
 
 private:
     // Functions
@@ -267,7 +307,11 @@ private:
             fsread.release();
         }
         else
-            std::cerr << "Could not find background file..." << std::endl;
+        {
+            std::cerr << "WARNING: Could not find background file!!!" << std::endl;
+            std::cerr << "WARNING: I repeat, could not find background file!!!" << std::endl;
+            std::cerr << "WARNING: I'm serious, do not spend 45 minutes troubleshooting all black images like me!!!" << std::endl;
+        }
     }
 
     // Variables

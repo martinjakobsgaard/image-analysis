@@ -34,11 +34,19 @@ class DynamicRangeTest : public BaseTest
             for(int i = 0; i < test_image_paths.size(); i++)
             {
                 cv::Mat image = cv::imread(test_image_paths[i], cv::IMREAD_COLOR );
+
                 if( image.empty() )
                 {
                     std::cout <<  "Could not open or find the image" << std::endl ;
                     return;
                 }
+
+                if(USE_ROI)
+                {
+                    cv::Rect crop(448, 115, 400, 120);
+                    image = image(crop);
+                }
+
                 //std::cout << test_image_paths[i];
                 test_results.push_back(getDynamicRange(image));
 
